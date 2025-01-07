@@ -1,0 +1,55 @@
+# 构建输出目录
+/build/
+/dist/
+/out/
+/release/
+
+# 依赖目录
+/node_modules/
+/vendor/
+
+# IDE 和编辑器文件
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# 编译后的文件
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# 压缩包
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# 操作系统生成的文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
