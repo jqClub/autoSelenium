@@ -3,15 +3,11 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*' # 当推送带v开头的tag时触发，例如 v1.0.0
+      - 'v*'
 
 jobs:
-  release:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+  build:
+    runs-on: macos-latest
 
     steps:
       - name: Check out Git repository
@@ -25,8 +21,8 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build and Package
-        run: npm run build
+      - name: Build for macOS and Windows
+        run: npm run build -- -mw
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -37,7 +33,6 @@ jobs:
           files: |
             dist/*.exe
             dist/*.dmg
-            dist/*.AppImage
             dist/*.zip
           draft: false
           prerelease: false
