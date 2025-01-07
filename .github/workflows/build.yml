@@ -1,52 +1,65 @@
-name: Build Windows App
+name: Build Application
 
 on:
   push:
-    branches: [main]
-    tags:
-      - 'v*'
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
+    inputs:
+      platform:
+        description: '选择构建平台'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - mac
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: macos-latest
 
     steps:
-      - name: Checkout code
+      - name: Check out Git repository
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: 18
 
-      - name: Install dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Application
         run: |
-          npm install
-          npm run postinstall
-
-      - name: Build Windows App
-        run: npm run build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: windows-installer
-          path: |
-            dist/*.exe
-            !dist/win-unpacked
-
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            dist/*.exe
-            !dist/win-unpacked/**/*
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.platform }}" = "windows" ]; then
+              npm run build:windows
+            elif [ "${{ github.event.inputs.platform }}" = "mac" ]; then
+              npm run build:mac
+            else
+              npm run build -- --all
+            fi
+          else
+            npm run build -- --all
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List Build Output
+        run: ls -R dist/
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: builds
+          path: |
+            dist/*-setup.exe
+            dist/*.dmg
+            dist/*-win.zip
+            dist/*-mac.zip
+            dist/latest.yml
+            dist/latest-mac.yml
