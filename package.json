@@ -5,11 +5,11 @@
     "main": "main.js",
     "scripts": {
         "start": "electron .",
-        "build": "node build.js",
+        "build": "electron-builder",
         "build:all": "electron-builder -mw",
         "build:windows": "electron-builder --win",
         "build:mac": "electron-builder --mac",
-        "postinstall": "playwright install chrome",
+        "postinstall": "electron-builder install-app-deps",
         "version": "git add -A",
         "postversion": "git push && git push --tags"
     },

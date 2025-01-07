@@ -29,30 +29,50 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
+          cache: 'npm'
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install
+          npm run postinstall || true
+
+      - name: Create dist directory
+        run: mkdir -p dist
 
       - name: Build Application
         run: |
+          echo "Starting build process..."
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             if [ "${{ github.event.inputs.platform }}" = "windows" ]; then
+              echo "Building Windows version..."
               npm run build:windows
             elif [ "${{ github.event.inputs.platform }}" = "mac" ]; then
+              echo "Building macOS version..."
               npm run build:mac
             else
+              echo "Building all platforms..."
               npm run build -- --all
             fi
           else
+            echo "Building all platforms..."
             npm run build -- --all
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: false
 
       - name: List Build Output
-        run: ls -R dist/
+        run: |
+          echo "Listing dist directory contents..."
+          if [ -d "dist" ]; then
+            ls -la dist/
+          else
+            echo "dist directory does not exist!"
+            exit 1
+          fi
 
       - name: Upload Artifacts
+        if: success()
         uses: actions/upload-artifact@v3
         with:
           name: builds
@@ -61,5 +81,15 @@ jobs:
             dist/*.dmg
             dist/*-win.zip
             dist/*-mac.zip
-            dist/latest.yml
-            dist/latest-mac.yml
+            dist/latest*.yml
+          if-no-files-found: error
+
+      - name: Upload Build Logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-logs
+          path: |
+            npm-debug.log*
+            yarn-debug.log*
+            yarn-error.log*
