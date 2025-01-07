@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>网页自动化工具</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+        }
+
+        .settings {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+        }
+
+        .history-controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .history-controls button {
+            padding: 5px 10px;
+            background-color: #2196F3;
+        }
+
+        #stopBtn {
+            background-color: #f44336;
+        }
+
+        #stopBtn:disabled {
+            background-color: #cccccc;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>网页自动化工具</h2>
+        <div>
+            <h3>网址列表（每行一个）</h3>
+            <textarea id="urls" placeholder="请输入网址，每行一个"></textarea>
+            <div class="history-controls">
+                <button id="loadUrls">加载历史网址</button>
+            </div>
+        </div>
+        <div class="settings">
+            <label>每个页面停留时间（秒）：</label>
+            <input type="number" id="duration" value="10" min="1">
+            <label>滚动间隔时间（毫秒）：</label>
+            <input type="number" id="scrollInterval" value="1000" min="100">
+            <label>最大同时打开页面数：</label>
+            <input type="number" id="maxPages" value="5" min="1">
+        </div>
+        <button id="startBtn">开始自动化</button>
+        <button id="stopBtn" disabled>停止自动化</button>
+    </div>
+    <script>
+        // 监听自动化完成事件
+        window.electronAPI.onAutomationCompleted(() => {
+            document.getElementById('startBtn').disabled = false
+            document.getElementById('stopBtn').disabled = true
+        })
+
+        // 加载URL列表
+        document.getElementById('loadUrls').addEventListener('click', async () => {
+            const result = await window.electronAPI.loadUrls()
+            if (result.success && result.urls.length > 0) {
+                document.getElementById('urls').value = result.urls.join('\n')
+            } else if (result.success) {
+                alert('没有找到保存的网址列表')
+            } else {
+                alert('加载失败：' + result.error)
+            }
+        })
+
+        // 停止自动化
+        document.getElementById('stopBtn').addEventListener('click', async () => {
+            const result = await window.electronAPI.stopAutomation()
+            if (result.success) {
+                document.getElementById('startBtn').disabled = false
+                document.getElementById('stopBtn').disabled = true
+            }
+        })
+
+        // 开始自动化
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            const button = document.getElementById('startBtn')
+            const stopBtn = document.getElementById('stopBtn')
+            const urlsText = document.getElementById('urls').value
+            const duration = parseInt(document.getElementById('duration').value)
+            const scrollInterval = parseInt(document.getElementById('scrollInterval').value)
+            const maxPages = parseInt(document.getElementById('maxPages').value)
+
+            console.log('Starting automation with:', { urlsText, duration, scrollInterval, maxPages })
+
+            const urls = urlsText.split('\n').filter(url => url.trim())
+
+            if (urls.length === 0) {
+                alert('请输入至少一个网址')
+                return
+            }
+
+            if (isNaN(duration) || duration < 1) {
+                alert('请输入有效的时间数值')
+                return
+            }
+
+            if (isNaN(scrollInterval) || scrollInterval < 100) {
+                alert('请输入有效的滚动间隔时间（最小100毫秒）')
+                return
+            }
+
+            if (isNaN(maxPages) || maxPages < 1) {
+                alert('请输入有效的最大页面数（最小1个）')
+                return
+            }
+
+            button.disabled = true
+            stopBtn.disabled = false
+
+            try {
+                console.log('Sending request to main process')
+                const result = await window.electronAPI.startAutomation({
+                    urls,
+                    duration,
+                    scrollInterval,
+                    maxPages
+                })
+                console.log('Received result:', result)
+                if (!result.success) {
+                    alert('发生错误：' + result.error)
+                }
+            } catch (error) {
+                console.error('Error in renderer:', error)
+                alert('发生错误：' + error.message)
+            }
+        })
+
+        // 页面加载时自动加载保存的URL列表
+        window.addEventListener('load', async () => {
+            const result = await window.electronAPI.loadUrls()
+            if (result.success && result.urls.length > 0) {
+                document.getElementById('urls').value = result.urls.join('\n')
+            }
+        })
+    </script>
+</body>
+
+</html>
