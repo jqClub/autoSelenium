@@ -53,3 +53,7 @@ yarn-error.log*
 ehthumbs.db
 Thumbs.db
 
+# 保留构建必需的文件
+!build/icon.ico
+!build/icon.icns
+

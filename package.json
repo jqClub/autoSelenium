@@ -6,9 +6,9 @@
     "scripts": {
         "start": "electron .",
         "build": "electron-builder",
-        "build:all": "electron-builder -mw",
-        "build:windows": "electron-builder --win",
-        "build:mac": "electron-builder --mac",
+        "build:all": "electron-builder -mw --x64 --publish never",
+        "build:windows": "electron-builder --win --x64 --publish never",
+        "build:mac": "electron-builder --mac --x64 --publish never",
         "postinstall": "electron-builder install-app-deps",
         "version": "git add -A",
         "postversion": "git push && git push --tags"
@@ -17,7 +17,8 @@
         "appId": "com.webautomation.app",
         "productName": "Web Automation Tool",
         "directories": {
-            "output": "dist"
+            "output": "dist",
+            "buildResources": "build"
         },
         "win": {
             "target": [
@@ -71,6 +72,9 @@
                     "**/*"
                 ]
             }
+        ],
+        "asarUnpack": [
+            "node_modules/playwright-core/.local-browsers/**/*"
         ]
     },
     "keywords": [],

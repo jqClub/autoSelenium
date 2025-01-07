@@ -6,20 +6,10 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
-    inputs:
-      platform:
-        description: '选择构建平台'
-        required: true
-        default: 'all'
-        type: choice
-        options:
-          - all
-          - windows
-          - mac
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-latest # 使用 macOS 运行器可以同时构建 Mac 和 Windows
 
     steps:
       - name: Check out Git repository
@@ -33,49 +23,48 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm install
+          npm install --verbose
           npm run postinstall || true
 
-      - name: Create dist directory
-        run: mkdir -p dist
+      - name: Create Build Resources
+        run: |
+          mkdir -p build
+          # 创建默认图标文件（如果需要）
+          touch build/icon.ico
+          touch build/icon.icns
+
+      - name: Pre-build Checks
+        run: |
+          echo "Checking required files..."
+          if [ ! -f "main.js" ]; then
+            echo "Error: main.js not found!"
+            exit 1
+          fi
+
+          if [ ! -f "package.json" ]; then
+            echo "Error: package.json not found!"
+            exit 1
+          fi
 
       - name: Build Application
         run: |
           echo "Starting build process..."
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            if [ "${{ github.event.inputs.platform }}" = "windows" ]; then
-              echo "Building Windows version..."
-              npm run build:windows
-            elif [ "${{ github.event.inputs.platform }}" = "mac" ]; then
-              echo "Building macOS version..."
-              npm run build:mac
-            else
-              echo "Building all platforms..."
-              npm run build -- --all
-            fi
-          else
-            echo "Building all platforms..."
-            npm run build -- --all
-          fi
+          export DEBUG=electron-builder
+          npm run build:all
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: false
 
       - name: List Build Output
+        if: always()
         run: |
-          echo "Listing dist directory contents..."
-          if [ -d "dist" ]; then
-            ls -la dist/
-          else
-            echo "dist directory does not exist!"
-            exit 1
-          fi
+          echo "Build output contents:"
+          ls -la dist/ || echo "dist/ directory not found"
 
-      - name: Upload Artifacts
-        if: success()
+      - name: Upload Build Artifacts
+        if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: builds
+          name: releases
           path: |
             dist/*-setup.exe
             dist/*.dmg
@@ -83,13 +72,3 @@ jobs:
             dist/*-mac.zip
             dist/latest*.yml
           if-no-files-found: error
-
-      - name: Upload Build Logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-logs
-          path: |
-            npm-debug.log*
-            yarn-debug.log*
-            yarn-error.log*
