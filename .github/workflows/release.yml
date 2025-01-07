@@ -4,6 +4,17 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: '选择构建平台'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - mac
 
 jobs:
   build:
@@ -21,8 +32,19 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build for macOS and Windows
-        run: npm run build -- -mw
+      - name: Build Application
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.platform }}" = "windows" ]; then
+              npm run build:windows
+            elif [ "${{ github.event.inputs.platform }}" = "mac" ]; then
+              npm run build:mac
+            else
+              npm run build -- --all
+            fi
+          else
+            npm run build -- --all
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
