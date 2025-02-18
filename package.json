@@ -4,7 +4,7 @@
     "description": "Web Automation Tool",
     "main": "main.js",
     "scripts": {
-        "start": "electron .",
+        "dev": "electron .",
         "build": "electron-builder",
         "build:all": "electron-builder -mw --x64 --publish never",
         "build:windows": "electron-builder --win --x64 --publish never",

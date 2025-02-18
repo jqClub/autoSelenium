@@ -290,19 +290,24 @@ function getNextUnvisitedLink () {
 }
 
 async function startBrowserSession (duration) {
-    const browser = await chromium.launch({
-        headless: false,
-        channel: 'chrome',
-        slowMo: 50,
-        args: ['--start-maximized']
-    })
+    // 使用 launchPersistentContext 替代 launch
+    const context = await chromium.launchPersistentContext(
+        path.join(app.getPath('userData'), 'ChromeProfile'),
+        {
+            headless: false,
+            channel: 'chrome',
+            slowMo: 50,
+            args: [
+                '--start-maximized',
+                '--disable-incognito'
+            ],
+            viewport: null,
+            acceptDownloads: true,
+            incognito: false
+        }
+    )
 
     try {
-        const context = await browser.newContext({
-            viewport: null,
-            acceptDownloads: true
-        })
-
         // 初始化链接列表
         allLinks = initialUrls.map(url => ({ href: url, text: url }))
         visitedLinks = []
@@ -400,7 +405,7 @@ async function startBrowserSession (duration) {
         return true // 返回true表示需要重新开始
 
     } finally {
-        await browser.close()
+        await context.close()  // 注意：这里改为关闭 context 而不是 browser
     }
 }
 
